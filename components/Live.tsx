@@ -5,6 +5,8 @@ import CursorChat from "./cursor/CursorChat";
 import { CursorMode, CursorState, Reaction } from "@/types/type";
 import Cursor from "./cursor/Cursor";
 import ReactionSelector from "./reaction/ReactionButton";
+import FlyingReaction from "./reaction/FlyingReaction";
+import useInterval from "@/hooks/useInterval";
 
 
 const Live = () => {
@@ -15,6 +17,8 @@ const Live = () => {
     const[cursorState, setCursorState] = useState<CursorState>({
         mode : CursorMode.Hidden,
     });
+
+
 
     const handlePointerMove = useCallback((event: React.PointerEvent) => {
         event.preventDefault();
@@ -57,7 +61,19 @@ const Live = () => {
 
     }, [cursorState.mode, setCursorState]);
 
-    const [reactions, setreactions] = useState<Reaction[]>([])
+    const [reaction, setReaction] = useState<Reaction[]>([])
+
+    useInterval(() => {
+        if(cursorState.mode === CursorMode.Reaction && cursorState.isPressed && cursor){
+            setReaction((reactions) => reactions.concat([
+                {
+                    point: { x: cursor.x, y: cursor.y},
+                    value: cursorState.reaction,
+                    timestamp: Date.now()
+                }
+            ]))
+        } 
+    }, 100);
 
     useEffect(() => {
         const onKeyUp = (e: KeyboardEvent) => {
@@ -108,6 +124,16 @@ const Live = () => {
         >
 
             <h1 className="text-2xl text-white"> Online Design collaboration tool </h1>
+
+            {reaction.map((r) => (
+                <FlyingReaction 
+                    key ={r.timestamp.toString()}
+                    x={r.point.x}
+                    y={r.point.y}
+                    timestamp={r.timestamp}
+                    value = {r.value}
+                />
+            ))}
 
             {cursor && (
                 <CursorChat 
